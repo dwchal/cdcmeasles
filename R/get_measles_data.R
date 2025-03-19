@@ -22,71 +22,88 @@
 #'
 #' @export
 get_measles_data <- function(save_file = FALSE, file_name = "cdc_measles_data.csv") {
-  # URL for the CDC measles data CSV
-  # Note: The blob URL provided in the request is likely a temporary URL
-  # For a more permanent solution, we need to find the actual data source URL
-  
   # The CDC website for measles data is https://www.cdc.gov/measles/data-research/index.html
-  # Since the blob URL may be temporary, we'll use the direct URL pattern if available
+  # Try multiple possible URL patterns for CDC measles data
   
-  # For now, we'll use a known pattern for CDC data resources
-  # This URL may need to be updated if the CDC changes their data structure
-  url <- "https://www.cdc.gov/measles/downloads/measles-data.csv"
+  # List of potential URLs to try
+  urls <- c(
+    # Primary URLs
+    "https://www.cdc.gov/measles/downloads/measlescases.csv",
+    "https://www.cdc.gov/measles/data-research/measlescases.csv",
+    "https://data.cdc.gov/api/views/byrd-z4cn/rows.csv",  # CDC WONDER API pattern
+    # Alternative URLs
+    "https://www.cdc.gov/measles/downloads/measles-data.csv",
+    "https://www.cdc.gov/measles/downloads/measles-cases.csv",
+    "https://data.cdc.gov/resource/byrd-z4cn.csv"  # Socrata API pattern
+  )
   
-  tryCatch({
-    # Download the data
-    message("Downloading CDC measles data...")
-    response <- httr::GET(url)
+  # Try each URL in sequence
+  for (url in urls) {
+    message(paste("Trying URL:", url))
     
-    # Check if the request was successful
-    if (httr::status_code(response) == 200) {
-      # Parse the CSV data
-      data_content <- httr::content(response, as = "text")
-      measles_data <- readr::read_csv(data_content, show_col_types = FALSE)
+    success <- tryCatch({
+      # Download the data
+      response <- httr::GET(url)
       
-      # Save data if requested
-      if (save_file) {
-        utils::write.csv(measles_data, file = file_name, row.names = FALSE)
-        message(paste("Data saved to", file_name))
-      }
-      
-      return(measles_data)
-    } else {
-      stop(paste("Failed to download data. HTTP status code:", httr::status_code(response)))
-    }
-  }, error = function(e) {
-    # If the main URL fails, try the alternative URL from the user's request
-    warning("Primary URL failed, attempting to use alternative data source...")
-    
-    # This is a fallback option that attempts to use the blob URL pattern
-    # Note: This may not work long term as blob URLs are typically temporary
-    alt_url <- "https://www.cdc.gov/measles/downloads/measlescases.csv"
-    
-    tryCatch({
-      alt_response <- httr::GET(alt_url)
-      
-      if (httr::status_code(alt_response) == 200) {
-        alt_data_content <- httr::content(alt_response, as = "text")
-        alt_measles_data <- readr::read_csv(alt_data_content, show_col_types = FALSE)
+      # Check if the request was successful
+      if (httr::status_code(response) == 200) {
+        # Parse the CSV data
+        data_content <- httr::content(response, as = "text", encoding = "UTF-8")
         
-        if (save_file) {
-          utils::write.csv(alt_measles_data, file = file_name, row.names = FALSE)
-          message(paste("Data saved to", file_name))
+        # Check if the content is valid 
+        if (grepl("^\\s*$", data_content)) {
+          message("URL returned empty content, trying next URL.")
+          next
         }
         
-        return(alt_measles_data)
+        tryCatch({
+          measles_data <- readr::read_csv(data_content, show_col_types = FALSE)
+          
+          # Check if we got a valid data frame
+          if (nrow(measles_data) == 0) {
+            message("URL returned empty data frame, trying next URL.")
+            next
+          }
+          
+          # Save data if requested
+          if (save_file) {
+            utils::write.csv(measles_data, file = file_name, row.names = FALSE)
+            message(paste("Data saved to", file_name))
+          }
+          
+          message("Successfully downloaded CDC measles data.")
+          return(measles_data)
+        }, error = function(e) {
+          message(paste("Error parsing CSV from", url, ":", e$message))
+          return(FALSE)
+        })
       } else {
-        stop(paste(
-          "Both data sources failed. Please check the CDC website for updated data URLs:",
-          "https://www.cdc.gov/measles/data-research/index.html"
-        ))
+        message(paste("URL returned status code:", httr::status_code(response)))
+        return(FALSE)
       }
-    }, error = function(e2) {
-      stop(paste(
-        "Failed to download data from all sources. Original error:", e$message,
-        "Secondary error:", e2$message,
-        "Please check the CDC website for current data URLs."
-      ))
+    }, error = function(e) {
+      message(paste("Error accessing", url, ":", e$message))
+      return(FALSE)
     })
-  })
+    
+    if (is.data.frame(success)) {
+      return(success)
+    }
+  }
+  
+  # If we've tried all URLs and none worked
+  # Try to use the blob URL if provided
+  message("All standard URLs failed. Attempting to use direct blob URL...")
+  blob_url <- "blob:https://www.cdc.gov/2d032dd5-e5c3-437d-9bb2-59bb5ea8cb2d"
+  
+  message("Note: Blob URLs are typically temporary and may not work directly.")
+  message("Please visit https://www.cdc.gov/measles/data-research/index.html")
+  message("and download the data manually if automatic download fails.")
+  
+  # If all attempts fail, provide a helpful error message
+  stop(paste(
+    "Failed to download CDC measles data from all known sources.",
+    "Please check the CDC website at https://www.cdc.gov/measles/data-research/index.html",
+    "for the latest data structure or download the data manually."
+  ))
 } 

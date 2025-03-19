@@ -12,7 +12,7 @@ You can install the development version of `cdcmeasles` from GitHub with:
 
 ```r
 # install.packages("devtools")
-devtools::install_github("yourusername/cdcmeasles")
+devtools::install_github("dwchal/cdcmeasles")
 ```
 
 ## Usage

@@ -2,43 +2,74 @@
 #'
 #' This function checks if the CDC measles data URLs are accessible.
 #'
+#' @param verbose Logical. If TRUE, prints detailed messages during checks. Default is FALSE.
 #' @return Logical. TRUE if at least one data source is available, FALSE otherwise.
 #'
 #' @examples
 #' \dontrun{
 #' is_data_available()
+#' is_data_available(verbose = TRUE)
 #' }
 #'
 #' @importFrom httr GET status_code
 #'
 #' @export
-is_data_available <- function() {
-  # Primary URL
-  primary_url <- "https://www.cdc.gov/measles/downloads/measles-data.csv"
-  # Alternative URL
-  alt_url <- "https://www.cdc.gov/measles/downloads/measlescases.csv"
+is_data_available <- function(verbose = FALSE) {
+  # List of potential URLs to try, matching those in get_measles_data()
+  urls <- c(
+    # Primary URLs
+    "https://www.cdc.gov/measles/downloads/measlescases.csv",
+    "https://www.cdc.gov/measles/data-research/measlescases.csv",
+    "https://data.cdc.gov/api/views/byrd-z4cn/rows.csv",  # CDC WONDER API pattern
+    # Alternative URLs
+    "https://www.cdc.gov/measles/downloads/measles-data.csv",
+    "https://www.cdc.gov/measles/downloads/measles-cases.csv",
+    "https://data.cdc.gov/resource/byrd-z4cn.csv"  # Socrata API pattern
+  )
   
-  tryCatch({
-    # Check primary URL
-    primary_status <- httr::status_code(httr::GET(primary_url))
-    if (primary_status == 200) {
-      message("Primary CDC measles data source is available.")
+  data_available <- FALSE
+  
+  for (url in urls) {
+    if (verbose) message(paste("Checking availability of:", url))
+    
+    available <- tryCatch({
+      response <- httr::GET(url)
+      status <- httr::status_code(response)
+      
+      if (status == 200) {
+        # Also check if the response has content
+        content <- httr::content(response, as = "text", encoding = "UTF-8")
+        if (!grepl("^\\s*$", content)) {
+          if (verbose) message(paste("CDC measles data source is available at:", url))
+          data_available <- TRUE
+          break
+        } else {
+          if (verbose) message("URL returned empty content.")
+        }
+      } else {
+        if (verbose) message(paste("URL returned status code:", status))
+      }
+      
+      FALSE
+    }, error = function(e) {
+      if (verbose) message(paste("Error checking", url, ":", e$message))
+      FALSE
+    })
+    
+    if (available) {
       return(TRUE)
     }
-    
-    # Check alternative URL if primary fails
-    alt_status <- httr::status_code(httr::GET(alt_url))
-    if (alt_status == 200) {
-      message("Alternative CDC measles data source is available.")
-      return(TRUE)
+  }
+  
+  if (!data_available) {
+    if (verbose) {
+      message("CDC measles data is currently unavailable from known sources.")
+      message("Please check the CDC website at https://www.cdc.gov/measles/data-research/index.html")
+      message("for the latest data structure or download the data manually.")
     }
-    
-    message("CDC measles data is currently unavailable from known sources.")
-    return(FALSE)
-  }, error = function(e) {
-    message("Error checking data availability: ", e$message)
-    return(FALSE)
-  })
+  }
+  
+  return(data_available)
 }
 
 #' Clean Measles Data
