@@ -1,0 +1,26 @@
+Package: cdcmeasles
+Title: Download CDC Measles Data
+Version: 0.1.0
+Authors@R: 
+    person(given = "Doug",
+           family = "Challener,
+           role = c("aut", "cre"),
+           email = "doug@challener.net")
+Description: Provides functions to download and process CDC measles data from 
+    the CDC website. Similar to the cdcfluview package, it simplifies access 
+    to public health data for analysis in R.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: 
+    httr,
+    jsonlite,
+    utils,
+    dplyr,
+    readr
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown 

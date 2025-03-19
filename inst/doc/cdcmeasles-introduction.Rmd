@@ -1,0 +1,121 @@
+---
+title: "Introduction to cdcmeasles"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to cdcmeasles}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Introduction
+
+The `cdcmeasles` package provides an easy way to access measles data from the Centers for Disease Control and Prevention (CDC). This vignette demonstrates the basic functionality of the package.
+
+## Installation
+
+You can install the development version of `cdcmeasles` from GitHub:
+
+```{r installation, eval=FALSE}
+# install.packages("devtools")
+devtools::install_github("yourusername/cdcmeasles")
+```
+
+## Basic Usage
+
+First, load the package:
+
+```{r setup}
+library(cdcmeasles)
+```
+
+### Checking Data Availability
+
+Before downloading data, we can check if the CDC data sources are available:
+
+```{r check-availability}
+is_data_available()
+```
+
+### Getting Metadata
+
+We can retrieve metadata about the dataset:
+
+```{r metadata}
+get_measles_metadata()
+```
+
+### Downloading Data
+
+The main function of the package is `get_measles_data()`, which downloads measles data from the CDC:
+
+```{r download-data, eval=FALSE}
+# This chunk is set to eval=FALSE to prevent actual data download during vignette building
+measles_data <- get_measles_data()
+head(measles_data)
+```
+
+You can also save the data directly to a CSV file:
+
+```{r download-save, eval=FALSE}
+measles_data <- get_measles_data(save_file = TRUE, file_name = "measles_data.csv")
+```
+
+## Data Visualization
+
+The package includes functions to visualize the data:
+
+### Time Series Plot
+
+```{r time-series, eval=FALSE}
+# Assuming the data has appropriate date and cases columns
+plot_measles_time_series(measles_data)
+```
+
+### State Map
+
+If the data includes state-level information:
+
+```{r state-map, eval=FALSE}
+# Assuming the data has appropriate state and cases columns
+plot_measles_state_map(measles_data)
+```
+
+## Working with the Data
+
+Once you have downloaded the data, you can analyze it using standard R functions and packages:
+
+```{r data-analysis, eval=FALSE}
+# Summary statistics
+summary(measles_data)
+
+# If using dplyr for data manipulation
+if (requireNamespace("dplyr", quietly = TRUE)) {
+  library(dplyr)
+  
+  # Example: Find the states with the highest number of cases
+  # (Adjust column names based on actual data structure)
+  measles_data %>%
+    group_by(state) %>%
+    summarize(total_cases = sum(cases, na.rm = TRUE)) %>%
+    arrange(desc(total_cases)) %>%
+    head(10)
+}
+```
+
+## Conclusion
+
+The `cdcmeasles` package provides a convenient interface to CDC measles data, making it easier for researchers, public health professionals, and data scientists to access and analyze this important public health information.
+
+Remember to check the CDC website for information about data updates and changes to the data structure:
+https://www.cdc.gov/measles/data-research/index.html 
