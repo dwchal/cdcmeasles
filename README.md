@@ -1,14 +1,10 @@
 # cdcmeasles
 
-## Overview
-
-`cdcmeasles` is an R package designed to download and analyze measles data from the Centers for Disease Control and Prevention (CDC). It provides easy access to public health data related to measles cases in the United States.
-
-This package is inspired by the `cdcfluview` package, which provides similar functionality for influenza data. `cdcmeasles` simplifies the process of downloading, cleaning, and visualizing measles data for public health research and education.
+An R package to access CDC measles case data.
 
 ## Installation
 
-You can install the development version of `cdcmeasles` from GitHub with:
+You can install the development version of cdcmeasles from GitHub with:
 
 ```r
 # install.packages("devtools")
@@ -17,45 +13,45 @@ devtools::install_github("dwchal/cdcmeasles")
 
 ## Usage
 
-### Basic Usage
+The package provides access to two CDC measles datasets:
+1. Weekly cases (recent years)
+2. Yearly cases (historical data back to the 1980s)
 
 ```r
 library(cdcmeasles)
 
-# Check if CDC data is available
-is_data_available()
+# Check if data is available
+is_data_available(verbose = TRUE)
 
-# Get metadata about the dataset
-get_measles_metadata()
+# Get weekly data
+weekly_data <- get_measles_data("weekly")
 
-# Download the latest measles data
-measles_data <- get_measles_data()
-
-# Save the data to a CSV file
-measles_data <- get_measles_data(save_file = TRUE, file_name = "my_measles_data.csv")
+# Get yearly data
+yearly_data <- get_measles_data("yearly")
 ```
 
-### Data Visualization
+## Data Sources
 
-The package includes functions for visualizing measles data:
+The package accesses two official CDC data sources:
+- Weekly data: https://www.cdc.gov/wcms/vizdata/measles/MeaslesCasesWeekly.json
+- Yearly data: https://www.cdc.gov/wcms/vizdata/measles/MeaslesCasesYear.json
 
-```r
-library(cdcmeasles)
+## Data Format
 
-# Download the data
-data <- get_measles_data()
+### Weekly Data
+- week_start: Start date of the week
+- week_end: End date of the week
+- cases: Number of reported cases
 
-# Create a time series plot of measles cases
-plot_measles_time_series(data)
+### Yearly Data
+- year: Year of the data
+- cases: Number of reported cases
+- states_with_cases: Number of states reporting cases
+- outbreaks: Information about outbreaks during the year
 
-# Create a map of measles cases by state (if state-level data is available)
-plot_measles_state_map(data)
-```
+## License
 
-## Data Source
-
-The data is sourced directly from the CDC website:
-https://www.cdc.gov/measles/data-research/index.html
+MIT
 
 ## Dependencies
 
@@ -69,10 +65,6 @@ The package depends on:
 For visualization:
 - ggplot2
 - maps
-
-## License
-
-This package is released under the MIT License.
 
 ## Contributing
 

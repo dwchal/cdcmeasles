@@ -15,58 +15,44 @@
 #'
 #' @export
 is_data_available <- function(verbose = FALSE) {
-  # List of potential URLs to try, matching those in get_measles_data()
-  urls <- c(
-    # Primary URLs
-    "https://www.cdc.gov/measles/downloads/measlescases.csv",
-    "https://www.cdc.gov/measles/data-research/measlescases.csv",
-    "https://data.cdc.gov/api/views/byrd-z4cn/rows.csv",  # CDC WONDER API pattern
-    # Alternative URLs
-    "https://www.cdc.gov/measles/downloads/measles-data.csv",
-    "https://www.cdc.gov/measles/downloads/measles-cases.csv",
-    "https://data.cdc.gov/resource/byrd-z4cn.csv"  # Socrata API pattern
+  urls <- list(
+    weekly = "https://www.cdc.gov/wcms/vizdata/measles/MeaslesCasesWeekly.json",
+    yearly = "https://www.cdc.gov/wcms/vizdata/measles/MeaslesCasesYear.json"
   )
   
   data_available <- FALSE
   
-  for (url in urls) {
-    if (verbose) message(paste("Checking availability of:", url))
-    
-    available <- tryCatch({
-      response <- httr::GET(url)
-      status <- httr::status_code(response)
-      
-      if (status == 200) {
-        # Also check if the response has content
-        content <- httr::content(response, as = "text", encoding = "UTF-8")
-        if (!grepl("^\\s*$", content)) {
-          if (verbose) message(paste("CDC measles data source is available at:", url))
-          data_available <- TRUE
-          break
-        } else {
-          if (verbose) message("URL returned empty content.")
-        }
-      } else {
-        if (verbose) message(paste("URL returned status code:", status))
-      }
-      
-      FALSE
-    }, error = function(e) {
-      if (verbose) message(paste("Error checking", url, ":", e$message))
-      FALSE
-    })
-    
-    if (available) {
-      return(TRUE)
+  for (type in names(urls)) {
+    url <- urls[[type]]
+    if (verbose) {
+      message(sprintf("Checking %s data URL: %s", type, url))
     }
+    
+    tryCatch({
+      response <- httr::GET(url)
+      if (httr::status_code(response) == 200) {
+        content <- httr::content(response, "text")
+        if (nchar(content) > 0) {
+          data_available <- TRUE
+          if (verbose) {
+            message(sprintf("%s data is available", type))
+          }
+        }
+      } else if (verbose) {
+        message(sprintf("%s data URL returned status code: %d", 
+                       type, httr::status_code(response)))
+      }
+    }, error = function(e) {
+      if (verbose) {
+        message(sprintf("Error checking %s data: %s", type, e$message))
+      }
+    })
   }
   
-  if (!data_available) {
-    if (verbose) {
-      message("CDC measles data is currently unavailable from known sources.")
-      message("Please check the CDC website at https://www.cdc.gov/measles/data-research/index.html")
-      message("for the latest data structure or download the data manually.")
-    }
+  if (!data_available && verbose) {
+    message("No data sources are currently available")
+    message("Please check https://www.cdc.gov/measles/cases-outbreaks.html")
+    message("for the latest information about measles cases")
   }
   
   return(data_available)
@@ -137,4 +123,68 @@ get_measles_metadata <- function() {
     update_frequency = "Varies, check CDC website for details",
     last_checked = Sys.Date()
   )
+}
+
+#' Get measles case data from CDC
+#'
+#' @description
+#' Downloads and processes measles case data from the CDC website.
+#' The function can retrieve either weekly or yearly data.
+#'
+#' @param type Character. Either "weekly" or "yearly" to specify which dataset to retrieve.
+#' @param verbose Logical. If TRUE, prints detailed messages during download. Default is FALSE.
+#' @return A data frame containing measles case data, or NULL if download fails.
+#' @export
+get_measles_data <- function(type = c("weekly", "yearly"), verbose = FALSE) {
+  type <- match.arg(type)
+  
+  urls <- list(
+    weekly = "https://www.cdc.gov/wcms/vizdata/measles/MeaslesCasesWeekly.json",
+    yearly = "https://www.cdc.gov/wcms/vizdata/measles/MeaslesCasesYear.json"
+  )
+  
+  url <- urls[[type]]
+  
+  if (verbose) {
+    message(sprintf("Attempting to download %s data from: %s", type, url))
+  }
+  
+  tryCatch({
+    response <- httr::GET(url)
+    if (httr::status_code(response) == 200) {
+      json_data <- jsonlite::fromJSON(httr::content(response, "text"))
+      
+      # Convert to data frame
+      df <- as.data.frame(json_data, stringsAsFactors = FALSE)
+      
+      # Convert columns based on data type
+      if (type == "weekly") {
+        df$week_start <- as.Date(df$week_start)
+        df$week_end <- as.Date(df$week_end)
+        df$cases <- as.numeric(df$cases)
+      } else {
+        # Yearly data conversions
+        df$year <- as.numeric(df$year)
+        df$cases <- as.numeric(df$cases)
+        df$states_with_cases <- as.numeric(df$states_with_cases)
+        # Keep outbreaks columns as character as they contain mixed data
+      }
+      
+      if (verbose) {
+        message(sprintf("Successfully processed %s data", type))
+      }
+      return(df)
+    } else {
+      if (verbose) {
+        message(sprintf("Failed to download data: HTTP status code %d", 
+                       httr::status_code(response)))
+      }
+    }
+  }, error = function(e) {
+    if (verbose) {
+      message(sprintf("Error downloading data: %s", e$message))
+    }
+  })
+  
+  return(NULL)
 } 
