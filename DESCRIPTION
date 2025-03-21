@@ -2,7 +2,7 @@ Package: cdcmeasles
 Title: Access CDC Measles Case Data
 Version: 0.1.0
 Authors@R: 
-    person("Douglas", "Challener", email = "dwchal@protonmail.com", role = c("aut", "cre"))
+    person("Doug", "Challener", email = "doug@challener.net", role = c("aut", "cre"))
 Description: Provides functions to access and analyze measles case data from the Centers for Disease Control and Prevention (CDC). The package includes utilities to download and process measles case data, check data availability, and perform basic analysis.
 License: MIT + file LICENSE
 Encoding: UTF-8
