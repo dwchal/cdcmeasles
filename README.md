@@ -28,6 +28,9 @@ weekly_data <- get_measles_data("weekly")
 
 # Get yearly data
 yearly_data <- get_measles_data("yearly")
+
+# Save yearly data to CSV
+get_measles_data("yearly", save_file = TRUE, file_name = "yearly.csv")
 ```
 
 ## Data Sources
@@ -76,4 +79,4 @@ The CDC occasionally updates their data structure and URLs. If you encounter iss
 
 ## Disclaimer
 
-This package is not officially affiliated with or endorsed by the CDC. The data is provided by the CDC and is made available through this package for ease of access and analysis. 
+This package is not officially affiliated with or endorsed by the CDC. The data is provided by the CDC and is made available through this package for ease of access and analysis.
