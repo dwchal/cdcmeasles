@@ -4,12 +4,15 @@
 \alias{get_measles_data}
 \title{Get measles case data from CDC}
 \usage{
-get_measles_data(type = c("weekly", "yearly"), verbose = FALSE)
+get_measles_data(type = c("weekly", "yearly"), verbose = FALSE,
+    save_file = FALSE, file_name = NULL)
 }
 \arguments{
 \item{type}{Character. Either "weekly" or "yearly" to specify which dataset to retrieve.}
 
 \item{verbose}{Logical. If TRUE, prints detailed messages during download. Default is FALSE.}
+\item{save_file}{Logical. If TRUE, saves the downloaded data to a CSV file. Default is FALSE.}
+\item{file_name}{Name of the output CSV file when \code{save_file} is TRUE. If \code{NULL}, a default file name based on \code{type} is used.}
 }
 \value{
 A data frame containing measles case data, or NULL if download fails.

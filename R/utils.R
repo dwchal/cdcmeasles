@@ -19,15 +19,15 @@ is_data_available <- function(verbose = FALSE) {
     weekly = "https://www.cdc.gov/wcms/vizdata/measles/MeaslesCasesWeekly.json",
     yearly = "https://www.cdc.gov/wcms/vizdata/measles/MeaslesCasesYear.json"
   )
-  
+
   data_available <- FALSE
-  
+
   for (type in names(urls)) {
     url <- urls[[type]]
     if (verbose) {
       message(sprintf("Checking %s data URL: %s", type, url))
     }
-    
+
     tryCatch({
       response <- httr::GET(url)
       if (httr::status_code(response) == 200) {
@@ -39,7 +39,7 @@ is_data_available <- function(verbose = FALSE) {
           }
         }
       } else if (verbose) {
-        message(sprintf("%s data URL returned status code: %d", 
+        message(sprintf("%s data URL returned status code: %d",
                        type, httr::status_code(response)))
       }
     }, error = function(e) {
@@ -48,13 +48,13 @@ is_data_available <- function(verbose = FALSE) {
       }
     })
   }
-  
+
   if (!data_available && verbose) {
     message("No data sources are currently available")
     message("Please check https://www.cdc.gov/measles/cases-outbreaks.html")
     message("for the latest information about measles cases")
   }
-  
+
   return(data_available)
 }
 
@@ -72,12 +72,12 @@ is_data_available <- function(verbose = FALSE) {
 clean_measles_data <- function(data) {
   # This function will need to be customized based on the actual structure
   # of the CDC measles data, which may vary
-  
+
   tryCatch({
     # Basic cleaning operations
     # 1. Convert column names to lowercase
     names(data) <- tolower(names(data))
-    
+
     # 2. Try to convert date columns to proper date format
     # (Exact column names will depend on the actual data structure)
     if ("date" %in% names(data)) {
@@ -86,16 +86,16 @@ clean_measles_data <- function(data) {
       # Some CDC data uses week/year format
       # This would need custom handling
     }
-    
+
     # 3. Convert numeric columns to numeric type
     # (Again, exact columns depend on the data structure)
-    numeric_cols <- names(data)[sapply(data, is.character) & 
+    numeric_cols <- names(data)[sapply(data, is.character) &
                                grepl("cases|count|number", names(data))]
-    
+
     for (col in numeric_cols) {
       data[[col]] <- as.numeric(data[[col]])
     }
-    
+
     return(data)
   }, error = function(e) {
     warning("Error cleaning data: ", e$message, "\nReturning original data.")
@@ -133,30 +133,37 @@ get_measles_metadata <- function() {
 #'
 #' @param type Character. Either "weekly" or "yearly" to specify which dataset to retrieve.
 #' @param verbose Logical. If TRUE, prints detailed messages during download. Default is FALSE.
+#' @param save_file Logical. If TRUE, saves the downloaded data to a CSV file. Default is FALSE.
+#' @param file_name Character. Name of the output CSV file when `save_file` is TRUE.
+#'   If `NULL`, a default file name based on `type` is used.
+#'
 #' @return A data frame containing measles case data, or NULL if download fails.
 #' @export
-get_measles_data <- function(type = c("weekly", "yearly"), verbose = FALSE) {
+get_measles_data <- function(type = c("weekly", "yearly"),
+                             verbose = FALSE,
+                             save_file = FALSE,
+                             file_name = NULL) {
   type <- match.arg(type)
-  
+
   urls <- list(
     weekly = "https://www.cdc.gov/wcms/vizdata/measles/MeaslesCasesWeekly.json",
     yearly = "https://www.cdc.gov/wcms/vizdata/measles/MeaslesCasesYear.json"
   )
-  
+
   url <- urls[[type]]
-  
+
   if (verbose) {
     message(sprintf("Attempting to download %s data from: %s", type, url))
   }
-  
+
   tryCatch({
     response <- httr::GET(url)
     if (httr::status_code(response) == 200) {
       json_data <- jsonlite::fromJSON(httr::content(response, "text"))
-      
+
       # Convert to data frame
       df <- as.data.frame(json_data, stringsAsFactors = FALSE)
-      
+
       # Convert columns based on data type
       if (type == "weekly") {
         df$week_start <- as.Date(df$week_start)
@@ -169,14 +176,24 @@ get_measles_data <- function(type = c("weekly", "yearly"), verbose = FALSE) {
         df$states_with_cases <- as.numeric(df$states_with_cases)
         # Keep outbreaks columns as character as they contain mixed data
       }
-      
+
+      if (save_file) {
+        if (is.null(file_name)) {
+          file_name <- sprintf("measles_%s_data.csv", type)
+        }
+        utils::write.csv(df, file_name, row.names = FALSE)
+        if (verbose) {
+          message(sprintf("Data saved to %s", file_name))
+        }
+      }
+
       if (verbose) {
         message(sprintf("Successfully processed %s data", type))
       }
       return(df)
     } else {
       if (verbose) {
-        message(sprintf("Failed to download data: HTTP status code %d", 
+        message(sprintf("Failed to download data: HTTP status code %d",
                        httr::status_code(response)))
       }
     }
@@ -185,6 +202,6 @@ get_measles_data <- function(type = c("weekly", "yearly"), verbose = FALSE) {
       message(sprintf("Error downloading data: %s", e$message))
     }
   })
-  
+
   return(NULL)
-} 
+}
