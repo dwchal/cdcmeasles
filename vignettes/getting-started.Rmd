@@ -1,0 +1,207 @@
+---
+title: "Getting Started with cdcmeasles"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with cdcmeasles}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Introduction
+
+The `cdcmeasles` package provides easy access to measles case data from the Centers for Disease Control and Prevention (CDC). This vignette will guide you through the basic usage of the package.
+
+## Installation
+
+You can install the development version from GitHub:
+
+```r
+# install.packages("devtools")
+devtools::install_github("dwchal/cdcmeasles")
+```
+
+## Loading the Package
+
+```{r load}
+library(cdcmeasles)
+```
+
+## Checking Data Availability
+
+Before downloading data, you can check if the CDC data endpoints are accessible:
+
+```{r availability, eval=FALSE}
+# Check availability (returns named logical vector)
+is_data_available()
+
+# With detailed output
+is_data_available(verbose = TRUE)
+```
+
+## Understanding the Data Sources
+
+The package accesses two official CDC data sources:
+
+1. **Weekly data**: Recent case counts aggregated by week
+2. **Yearly data**: Historical case counts with outbreak information
+
+You can view the metadata and URLs:
+
+```{r metadata}
+# Get package metadata
+meta <- get_measles_metadata()
+print(meta$data_urls)
+print(meta$weekly_columns)
+print(meta$yearly_columns)
+```
+
+## Downloading Data
+
+### Weekly Data
+
+Weekly data contains recent measles case counts:
+
+```{r weekly, eval=FALSE}
+# Download weekly data
+weekly <- get_measles_data("weekly")
+head(weekly)
+```
+
+Expected columns:
+- `week_start`: Start date of the reporting week
+- `week_end`: End date of the reporting week
+- `cases`: Number of reported cases
+
+### Yearly Data
+
+Yearly data contains historical case counts with additional context:
+
+```{r yearly, eval=FALSE}
+# Download yearly data
+yearly <- get_measles_data("yearly")
+head(yearly)
+```
+
+Expected columns:
+- `year`: The year
+- `cases`: Total cases for the year
+- `states_with_cases`: Number of states reporting cases
+- `outbreaks`: Description of major outbreaks
+
+## Quick Summary
+
+Get a quick summary of the most recent data:
+
+```{r summary, eval=FALSE}
+summary <- get_current_year_summary()
+print(summary)
+```
+
+## Visualizations
+
+The package includes several visualization functions that use ggplot2.
+
+### Time Series Plot
+
+```{r timeseries, eval=FALSE}
+# Weekly time series
+weekly <- get_measles_data("weekly")
+plot_measles_time_series(weekly)
+
+# Yearly time series with customization
+yearly <- get_measles_data("yearly")
+plot_measles_time_series(
+  yearly,
+  date_col = "year",
+  title = "Historical Measles Cases in the US",
+  line_color = "steelblue",
+  show_points = TRUE
+)
+```
+
+### Bar Chart
+
+```{r barchart, eval=FALSE}
+yearly <- get_measles_data("yearly")
+plot_measles_bars(
+  yearly,
+  title = "Measles Cases by Year",
+  highlight_recent = TRUE
+)
+```
+
+### State Map
+
+For state-level data (if available), you can create choropleth maps:
+
+```{r map, eval=FALSE}
+# Example with sample data
+state_data <- data.frame(
+  state = c("california", "texas", "new york", "florida"),
+  cases = c(50, 30, 45, 20)
+)
+
+plot_measles_state_map(state_data)
+```
+
+Note: The `maps` package is required for map visualizations.
+
+## Data Cleaning
+
+The package provides a utility function for data cleaning:
+
+```{r cleaning, eval=FALSE}
+# Clean data and remove rows with NA cases
+weekly <- get_measles_data("weekly")
+clean_weekly <- clean_measles_data(weekly, remove_na = TRUE)
+```
+
+## Error Handling
+
+The package handles network errors gracefully:
+
+```{r errors, eval=FALSE}
+# With verbose output to see what's happening
+data <- get_measles_data("weekly", verbose = TRUE)
+
+# Returns NULL if download fails
+if (is.null(data)) {
+  message("Data not available")
+}
+```
+
+## Working Offline
+
+You can save downloaded data for offline use:
+
+```{r offline, eval=FALSE}
+# Download and save
+weekly <- get_measles_data("weekly")
+write.csv(weekly, "measles_weekly.csv", row.names = FALSE)
+
+# Later, read back
+weekly <- read.csv("measles_weekly.csv")
+weekly$week_start <- as.Date(weekly$week_start)
+weekly$week_end <- as.Date(weekly$week_end)
+```
+
+## Notes on Data Access
+
+- The CDC may update their data structure or URLs periodically
+- Use `get_cdc_urls()` to check the current endpoints
+- Network connectivity is required for downloading data
+- Consider caching data locally for repeated analyses
+
+## Further Resources
+
+- [CDC Measles Data Page](https://www.cdc.gov/measles/data-research/index.html)
+- [Package GitHub Repository](https://github.com/dwchal/cdcmeasles)
