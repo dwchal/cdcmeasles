@@ -1,9 +1,14 @@
 Package: cdcmeasles
-Title: Access CDC Measles Case Data
-Version: 0.1.0
-Authors@R: 
+Title: Access and Visualize CDC Measles Case Data
+Version: 0.2.0
+Authors@R:
     person("Doug", "Challener", email = "doug@challener.net", role = c("aut", "cre"))
-Description: Provides functions to access and analyze measles case data from the Centers for Disease Control and Prevention (CDC). The package includes utilities to download and process measles case data, check data availability, and perform basic analysis.
+Description: Provides tools to access, analyze, and visualize measles case data
+    from the Centers for Disease Control and Prevention (CDC). The package
+    downloads data directly from official CDC JSON endpoints, offering both weekly
+    and historical yearly case counts. Includes functions to check data
+    availability, retrieve metadata, and create time series and choropleth map
+    visualizations.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -11,13 +16,16 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 URL: https://github.com/dwchal/cdcmeasles
 BugReports: https://github.com/dwchal/cdcmeasles/issues
-Imports: 
+Imports:
     httr,
     jsonlite,
-    utils,
-    dplyr,
-    readr
+    ggplot2,
+    rlang
 Suggests:
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown 
+    rmarkdown,
+    maps,
+    withr
+Config/testthat/edition: 3
+VignetteBuilder: knitr
